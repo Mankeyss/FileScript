@@ -1,0 +1,16 @@
+{
+  "name": "filescript",
+  "version": "1.0.0",
+  "description": "Programming Language",
+  "main": "Executor.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "filescript": "node \"./Executor.js\""
+  },
+  "author": "Mankey",
+  "license": "ISC",
+  "dependencies": {
+    "pkg": "^5.8.1",
+    "prompt-sync": "^4.2.0"
+  }
+}
