@@ -13,7 +13,7 @@ let askAnswer = "";
 
 console.clear();
 
-console.log("  _____   _   _          ____                  _           _   ");
+console.log(" _____   _   _          ____                  _           _   ");
 console.log("|  ___| (_) | |   ___  / ___|    ___   _ __  (_)  _ __   | |_ ");
 console.log("| |_    | | | |  / _ \\ \\___ \\   / __| | '__| | | | '_ \\  | __|");
 console.log("|_|     |_| |_|  \\___| |____/   \\___| |_|    |_| | .__/   \\__|");
@@ -73,8 +73,28 @@ RunCommand = function(command) {
                             }
                             
                             continue;
+                        } else if(command[f].startsWith('file(') && command[f].endsWith(')')) {
+                            //Read From File
+                            try {
+                                command[f] = command[f].slice(5, -1);
+                                if(fs.existsSync(command[f])) {
+                                    let fileExtension = command[f].split('.')[1];
+                                    if(fileExtension == 'fs' || fileExtension == 'txt') {
+                                        command[f] = fs.readFileSync(command[f], 'utf-8');
+                                    } else {
+                                        console.log('Invalid File Extension! .' + fileExtension);
+                                    }
+                                } else {
+                                    console.log(command[f] + ' Does Not Seem To Exist!');
+                                }
+                            } catch (e) {
+                                command[f] = "";
+                            }
+                            continue;
                         }
                     }
+
+                        
 
                     //Set Variable Value
                     variables.set(command[2], command.slice(5).join(" "));
@@ -215,6 +235,11 @@ RunCommand = function(command) {
                     RunCommand(act);
                     return;
                 }
+            } else if(compare == "!=") {
+                if(numberComp1 != numberComp2) {
+                    RunCommand(act);
+                    return;
+                }
             }
 
             validElse = true;
@@ -237,6 +262,7 @@ RunCommand = function(command) {
     //Write To Console
     if(command[0] == "write" && command.length >= 2) {
         for(n = 0; n < command.length; n++) {
+            //Get Variable
             if(command[n].startsWith('var(') && command[n].endsWith(')')) {
                 if(variables.has(command[n].slice(4, -1))) {
                     command[n] = variables.get(command[n].slice(4, -1));
@@ -246,6 +272,7 @@ RunCommand = function(command) {
                 continue;
             }
 
+            //Calculate Math
             if(command[n].startsWith('calc(') && command[n].endsWith(')')) {
                 let equation = command[n].slice(5, -1);
 
@@ -257,8 +284,28 @@ RunCommand = function(command) {
 
                 continue;
             }
-        }
 
+            //Read From File
+            if(command[n].startsWith('file(') && command[n].endsWith(')')) {
+                try {
+                    command[n] = command[n].slice(5, -1);
+                    if(fs.existsSync(command[n])) {
+                        let fileExtension = command[n].split('.')[1];
+                        if(fileExtension == 'fs' || fileExtension == 'txt') {
+                            command[n] = fs.readFileSync(command[n], 'utf-8');
+                        } else {
+                            console.log('Invalid File Extension! .' + fileExtension);
+                        }
+                    } else {
+                        console.log(command[n] + ' Does Not Seem To Exist!');
+                    }
+                } catch (e) {
+                    command[n] = "";
+                }
+                continue;
+            }
+        }
+        
         let data = command.splice(1).join(" ");
 
         consoledata += data + "\n";
@@ -280,12 +327,26 @@ RunCommand = function(command) {
         } else {
             let fileExtension =  file.split(".")[1];
             if(fileExtension == ("txt" || "fs")) {
-                if(fs.existsSync(file)) {
-                    fs.writeFileSync(file, consoledata);
-                    console.log(`Overwriting ${file}`);
+                if(!(command.length >= 4 && command[2] == 'variable')) {
+                    if(fs.existsSync(file)) {
+                        fs.writeFileSync(file, consoledata);
+                        console.log(`Overwriting ${file}`);
+                    } else {
+                        fs.writeFileSync(file, consoledata);
+                        console.log(`Creating ${file} And Saving Data To It`);
+                    }
                 } else {
-                    fs.writeFileSync(file, consoledata);
-                    console.log(`Creating ${file} And Saving Data To It`);
+                    if(variables.has(command[3])) {
+                        if(fs.existsSync(file)) {
+                            fs.writeFileSync(file, variables.get(command[3]));
+                            console.log(`Overwriting ${file}`);
+                        } else {
+                            fs.writeFileSync(file, variables.get(command[3]));
+                            console.log(`Creating ${file} And Saving Data To It`);
+                        }
+                    } else {
+                        console.log(`Variable ${command[2]} Does Not Exist!`);
+                    }
                 }
             } else {
                 console.log('Invalid File Extension!');
@@ -317,7 +378,7 @@ RunCommand = function(command) {
                             RunCommand(data[i]);
                         }
                     } catch(e) {
-                        console.log('There Was An Error Trying To Execute The File!');
+                        console.log('There Was An Unknown Error Trying To Execute The File! \n', e);
                     }
                     
             } else {
@@ -334,6 +395,25 @@ RunCommand = function(command) {
     //Help
     if((command[0] == "help" || command[0] == "docs") && command.length == 1) {
         console.log('//Link To Docs');
+    }
+
+    //Debugging
+    if(command[0] == "inspect" && command.length >= 2) {
+        console.log('----DEBUGGING----');
+        if(command.length == 3 && command[1] == "all" && command[2] == "variables") {
+            console.log(variables);
+        }
+
+        if(command.length == 3 && command[1] == "all" && command[2] == "functions") {
+            console.log(functions);
+        }
+
+        console.log('-----------------');
+    }
+
+    //Exit Program
+    if(command[0] == "exit" && command.length == 1) {
+        process.exit();
     }
 }
 }
